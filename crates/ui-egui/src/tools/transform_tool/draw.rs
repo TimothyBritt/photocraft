@@ -1,4 +1,5 @@
 use super::begin::warps_type;
+use super::cylinder::draw_cylinder;
 use super::options_bar::{quad_scale, readout};
 use super::pointer::{Hit, rotate_dir, rotation_degrees};
 use super::warp::{on_section_edge, quick_split_kind, single_patch};
@@ -84,7 +85,8 @@ pub fn draw_overlay(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform
         let over_canvas = painter.ctx().input(|i| i.pointer.hover_pos()).filter(|p| xf.rect.contains(*p)).map(|p| xf.to_doc(p));
         let at = pv.split_pointer.or(over_canvas);
         let alt = painter.ctx().input(|i| i.modifiers.alt || i.modifiers.command);
-        let guide = at.filter(|_| !warps_type(app)).and_then(|p| {
+        // No splits on type (#3004) or a cylinder (#4112).
+        let guide = at.filter(|_| !warps_type(app) && w.style != WarpStyle::Cylinder).and_then(|p| {
             let tool = pv.split_tool.or_else(|| {
                 (alt || pv.split_quick).then(|| {
                     let m = w.to_mesh(1, 1);
@@ -478,6 +480,21 @@ fn draw_warp_overlay(painter: &egui::Painter, xf: &ViewXform, w: &Warp, pv: &Tra
     }
     if w.style == WarpStyle::Custom {
         draw_warp_points(painter, &m, scr, pv, line);
+    }
+    if w.style == WarpStyle::Cylinder {
+        // The grid's columns collapse onto the silhouettes (the back of the cylinder): a few
+        // lines of longitude across the front, and of latitude, show its roundness.
+        if let Some(&ul) = m.us.get(1) {
+            for k in [1.0, 2.0] {
+                let s = ul + (0.5 - ul) * k / 3.0;
+                painter.add(egui::Shape::line(curve(Some(s), None), thin));
+                painter.add(egui::Shape::line(curve(Some(1.0 - s), None), thin));
+            }
+        }
+        for t in [1.0 / 3.0, 2.0 / 3.0] {
+            painter.add(egui::Shape::line(curve(None, Some(t)), thin));
+        }
+        draw_cylinder(painter, w, scr, pv, line);
     }
     if let Some((tool, p)) = guide {
         let (s, t) = m.param_at(p);

@@ -1,5 +1,6 @@
 use super::begin::warps_type;
 use super::commit::{commit, committing, moves_type};
+use super::cylinder::cylinder_cursor;
 use super::drag_modes::{apply_drag, apply_mode_drag, drag_mods, mode_allows, mode_mods};
 use super::warp::{quick_split_kind, split_cursor, surface_at, warp_hit, warp_pointer};
 use super::*;
@@ -264,6 +265,9 @@ pub fn cursor(app: &PhotocraftApp, xf: &ViewXform, p: [f64; 2], quick_split: boo
     if let Some(w) = &t.warp {
         if warps_type(app) {
             return Some(CursorIcon::Default);
+        }
+        if w.style == WarpStyle::Cylinder {
+            return Some(cylinder_cursor(w, p, tol, xf));
         }
         let armed = app.transform_preview.as_ref().and_then(|pv| pv.split_tool);
         if armed.is_some() || quick_split {
