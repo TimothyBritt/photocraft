@@ -1,9 +1,11 @@
 # Test build for Apple silicon only (not a release): the macOS steps of the shared release
 # workflow (storytold/craft-common-actions release.yml) with ad-hoc signing, uploaded as an
-# artifact. Run it by hand: Actions › Mac build (test) › Run workflow.
+# artifact. It runs on every push to the mac-build branch.
 name: Mac build (test)
 
 on:
+  push:
+    branches: [mac-build]
   workflow_dispatch:
 
 permissions:
