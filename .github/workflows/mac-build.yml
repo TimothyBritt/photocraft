@@ -44,8 +44,12 @@ jobs:
       - name: Verify (warnings only without signing secrets)
         continue-on-error: true
         run: packaging/macos/verify.sh --arch aarch64
+      # The artifact says what it holds: the version and the commit it was built from.
+      - name: Name the artifact
+        id: name
+        run: echo "name=photocraft-$(awk '/^\[workspace.package\]/{p=1;next} /^\[/{p=0} p&&$1=="version"{gsub(/"/,"",$3);print $3}' Cargo.toml)-macos-aarch64-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: photocraft-macos-aarch64-cylinder-warp
+          name: ${{ steps.name.outputs.name }}
           path: dist/release/*
           if-no-files-found: error
